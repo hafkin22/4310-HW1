@@ -18,7 +18,7 @@
         <ul>
             <li>Should the data be filtered to include only the trees with dates?</li>
         </ul>
-        <svg id="chart1" height="500" width="800"></svg>
+        <svg id="chart1" height="800" width="1000"></svg>
 
         <h1>Visualization 2: Popularity of tree types over time</h1>
 
@@ -60,15 +60,15 @@
                 var projection = d3.geoMercator().fitSize([mapWidth, mapHeight], neighborhoods);
                 var path = d3.geoPath().projection(projection);
 
-                tree_list.forEach( d => {
-                    // d.Position = projection([d.Longitude, d.Latitude]);
-                    neighborhoods.features.forEach( n => {
-                        let area = n.geometry.coordinates[0];
-                        if (d3.polygonContains(area, [d.Longitude, d.Latitude])) {
-                            d.neighborhood = n.properties.name;
-                        }
-                    });
-                });
+                // tree_list.forEach( d => {
+                //     // d.Position = projection([d.Longitude, d.Latitude]);
+                //     neighborhoods.features.forEach( n => {
+                //         let area = n.geometry.coordinates[0];
+                //         if (d3.polygonContains(area, [d.Longitude, d.Latitude])) {
+                //             d.neighborhood = n.properties.name;
+                //         }
+                //     });
+                // });
 
                 console.log(tree_list);
 
@@ -80,6 +80,16 @@
                                                   .join("path")
                                                   .attr("class", "neighborhood")
                                                   .attr("d", path);
+
+                const pathGenerator = d3.geoPath().projection(projection);
+                map.selectAll("text").data(neighborhoods.features)
+                                     .join("text")
+                                     .attr("x", d => pathGenerator.centroid(d)[0])
+                                     .attr("y", d => pathGenerator.centroid(d)[1])
+                                     .text(d => d.properties.name)
+                                     .attr("text-anchor", "middle")
+                                     .style("font-size", "8px")
+                                     .style("fill", "black");
 
                 // map.selectAll("circle").data(tree_list)
                 //    .join("circle")
