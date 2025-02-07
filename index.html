@@ -1,0 +1,97 @@
+<html>
+    <head>
+        <script src="https://d3js.org/d3.v7.min.js"></script>
+        <script src="https://d3js.org/topojson.v3.min.js"></script>
+
+        <style>
+            .neighborhood {
+                fill: #d6d6d6;
+                stroke: white;
+                stroke-width: 2px;
+            }
+        </style>
+    </head>
+    <body>
+
+        <h1>Visualization 1: Map that Depicts the Planting Date distribution of Trees Across the City</h1>
+        <p>This will be used to show where planting has occurred over time.</p>
+        <ul>
+            <li>Should the data be filtered to include only the trees with dates?</li>
+        </ul>
+        <svg id="chart1" height="500" width="800"></svg>
+
+        <h1>Visualization 2: Popularity of tree types over time</h1>
+
+        <script>
+            const svg = d3.select("#chart1");
+            const width = svg.attr("width");
+            const height = svg.attr("height");
+            const margin = { top: 20, right: 20, bottom: 20, left:20};
+            const mapWidth = width - margin.left - margin.right;
+            const mapHeight = height - margin.top - margin.bottom;
+            const map = svg.append("g")
+                           .attr("transform","translate("+margin.left+","+margin.top+")");
+            
+            const requestData = async () => {
+                const tree_list = await d3.csv("Street_Tree_List-2022-01-30_FILTERED.csv");
+
+                const timeParser = d3.timeParse("%m/%d/%y %H:%M");
+                tree_list.forEach( d => {
+                    d['PlantDate'] = timeParser(d['PlantDate']);
+                    if (d['PlantDate'] != null) {
+                        d['PlantDate'] = d['PlantDate'].getFullYear();
+                    }
+                    else {
+                        d['PlantDate'] = new Date(1954, 0, 1, 0, 0, 0).getFullYear();
+                    }
+                    // Some years were parsing as the future, so included this to handle them
+                    if (d['PlantDate'] > 2024) {
+                        d['PlantDate'] -= 100;
+                    }
+                });
+
+                console.log(tree_list);
+
+                const sf = await d3.json("SF-Neighborhoods.geo.json");
+
+                var neighborhoods = topojson.feature(sf, sf.objects.SFNeighborhoods);
+                console.log(neighborhoods);
+
+                var projection = d3.geoMercator().fitSize([mapWidth, mapHeight], neighborhoods);
+                var path = d3.geoPath().projection(projection);
+
+                tree_list.forEach( d => {
+                    // d.Position = projection([d.Longitude, d.Latitude]);
+                    neighborhoods.features.forEach( n => {
+                        let area = n.geometry.coordinates[0];
+                        if (d3.polygonContains(area, [d.Longitude, d.Latitude])) {
+                            d.neighborhood = n.properties.name;
+                        }
+                    });
+                });
+
+                console.log(tree_list);
+
+                const ageExtent = d3.extent(tree_list, d => d['PlantDate'] );
+                const ageScale = d3.scaleLinear().domain(ageExtent)
+                                   .range([0.1, 0.5]);
+
+                map.selectAll("path.neighborhood").data(neighborhoods.features)
+                                                  .join("path")
+                                                  .attr("class", "neighborhood")
+                                                  .attr("d", path);
+
+                // map.selectAll("circle").data(tree_list)
+                //    .join("circle")
+                //    .attr("r", 2)
+                //    .attr("fill", "forestgreen")
+                //    .attr("opacity", d => ageScale(d['PlantDate']))
+                //    .attr("cx", d => d.Position[0])
+                //    .attr("cy", d => d.Position[1]);
+
+                
+            }
+            requestData();
+        </script>
+    </body>
+</html>
