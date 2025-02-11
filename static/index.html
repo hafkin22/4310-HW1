@@ -110,10 +110,6 @@
                 const tree_list_old = tree_list.filter(d => d['PlantDate'] > 2008 & d['PlantDate'] < 2015);
                 d3.select("#totalBefore").text("Total Planting Before Adoption: " + format(tree_list_old.length));
 
-                let list = []
-                tree_list_recent.forEach(d => list.push(d['PlantDate']));
-                console.log(list);
-
                 const sf = await d3.json("SF-Neighborhoods.geo.json");
 
                 var neighborhoods = topojson.feature(sf, sf.objects.SFNeighborhoods);
